@@ -21,6 +21,7 @@ import '@polymer/app-route/app-route.js';
 import '@polymer/iron-pages/iron-pages.js';
 import '@polymer/iron-selector/iron-selector.js';
 import '@polymer/paper-icon-button/paper-icon-button.js';
+import './inc-component.js';
 import './my-icons.js';
 
 // Gesture events like tap and track generated from touch will not be
@@ -36,6 +37,7 @@ class MyApp extends PolymerElement {
     return html`
       <style>
         :host {
+          --app-background-color: #212121;
           --app-primary-text-color: #879aa9;
           --app-primary-color: #2b2e3c;
           --app-secondary-color: #354057;
@@ -131,8 +133,13 @@ class MyApp extends PolymerElement {
           <div class="logo"><img src="/images/logo.png"></div>
           <iron-selector selected="{{page}}" attr-for-selected="name" class="drawer-list" role="navigation">
             <div name="home"><a href="[[rootPath]]home"><iron-icon icon="my-icons:home" alt="Home"></iron-icon></a></div>
-            <div name="switches"><a href="[[rootPath]]switches"><iron-icon icon="my-icons:switch" alt="On/Off Switches"></iron-icon></a></div>
-            <div name="dimmers"><a href="[[rootPath]]dimmers"><iron-icon icon="my-icons:lightbulb" alt="Dimmers"></iron-icon></a></div>
+            <template is="dom-repeat" items="[[componentItems()]]" as="component">
+            <div name="[[component.id]]">
+              <a href="[[rootPath]][[component.id]]">
+                <iron-icon icon$="my-icons:[[component.icon]]" alt="[[component.name]]"></iron-icon>
+              </a>
+            </div>
+            </template>
           </iron-selector>
         </app-drawer>
 
@@ -147,8 +154,10 @@ class MyApp extends PolymerElement {
           </app-header>
 
           <iron-pages selected="[[page]]" attr-for-selected="name" role="main">
-            <inc-switches name="switches"></inc-switches>
-            <inc-dimmers name="dimmers"></inc-dimmers>
+            <div name="home"><h1>HOME!</h1></div>
+            <template is="dom-repeat" items="[[componentItems()]]" as="component">
+              <inc-component name="[[component.id]]" component="[[component]]"></inc-component>
+            </template>
             <my-view404 name="view404"></my-view404>
           </iron-pages>
         </app-header-layout>
@@ -174,14 +183,40 @@ class MyApp extends PolymerElement {
     ];
   }
 
+  constructor() {
+    super();
+    this.components = {
+      'switches': {
+        'name': 'On/Off Switches',
+        'icon': 'switch'
+      },
+      'dimmers': {
+        'name': 'Dimmers',
+        'icon': 'lightbulb'
+      }
+    }
+  }
+
+  componentItems() {
+    var items = new Array();
+
+    Object.keys(this.components).sort().forEach( e => {
+      var item = Object.assign({}, this.components[e]);
+      item.id = e;
+      items.push(item);
+    });
+
+    return items;
+  }
+
   _routePageChanged(page) {
      // Show the corresponding page according to the route.
      //
      // If no page was found in the route data, page will be an empty string.
      // Show 'view1' in that case. And if the page doesn't exist, show 'view404'.
-    if (!page) {
+    if (page == 'home' || !page) {
       this.page = 'home';
-    } else if (['switches', 'dimmers'].indexOf(page) !== -1) {
+    } else if (page in this.components) {
       this.page = page;
     } else {
       this.page = 'view404';
@@ -201,15 +236,17 @@ class MyApp extends PolymerElement {
     switch (page) {
       case 'home':
         break;
-      case 'switches':
-        import('./inc-switches.js');
-        break;
-      case 'dimmers':
-        import('./inc-dimmers.js');
-        break;
       case 'view404':
         import('./my-view404.js');
         break;
+      default:
+        if (page in this.components) {
+          import(`./components/${page}/inc-${page}.js`);
+          break;
+        } else {
+          import('./my-view404.js');
+          break;
+        }
     }
   }
 }

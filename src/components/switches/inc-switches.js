@@ -1,14 +1,16 @@
 import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
+import {GestureEventListeners} from '@polymer/polymer/lib/mixins/gesture-event-listeners.js';
+
 import '@polymer/iron-ajax/iron-ajax.js';
 import '@polymer/paper-dialog/paper-dialog.js';
 
-import './switch-control.js';
-import './shared-styles.js';
+import '../../switch-control.js';
+import '../../shared-styles.js';
 
-class IncSwitches extends PolymerElement {
+class IncSwitches extends GestureEventListeners(PolymerElement) {
   static get template() {
     return html`
-      <style include="shared-styles iron-flex">
+      <style include="shared-styles">
         :host {
           display: block;
           padding: 10px;
@@ -35,6 +37,12 @@ class IncSwitches extends PolymerElement {
 
         .label {
           display: inline-block;
+          cursor: pointer;
+        }
+
+        paper-dialog {
+          background-color: var(--app-primary-color);
+          color: var(--app-primary-text-color);
         }
       </style>
 
@@ -52,9 +60,14 @@ class IncSwitches extends PolymerElement {
       <template is="dom-repeat" items="[[switches]]" as="switch">
         <div class="switch">
           <switch-control></switch-control>
-          <div class="label"><a href="">{{ switch.name }}</a></div>
+          <div class="label" on-tap="openDialog" data-item$="[[index]]">{{ switch.name }}</div>
         </div>
       </template>
+
+      <paper-dialog id="dialog">
+        <h2>[[ currentDevice.name ]]</h2>
+      </paper-dialog>
+
       </div>
     `;
   }
@@ -77,6 +90,11 @@ class IncSwitches extends PolymerElement {
       }
       this.push("switches", data.detail.response[i]);
     }
+  }
+
+  openDialog(e) {
+    this.currentDevice = this.switches[e.target.dataset.item];
+    this.$.dialog.open();
   }
 }
 
